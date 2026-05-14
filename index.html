@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>小數減法挑戰</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #eafcf3; /* 淺薄荷綠背景 */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .math-font {
+            font-family: 'Roboto Mono', monospace;
+        }
+        /* 隱藏數字輸入框的上下箭頭 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        /* 自定義虛線框顏色 */
+        .dashed-box {
+            border: 3px dashed #93d8b5;
+            background-color: #f7fefa;
+        }
+        /* 預設輸入框：紅色邊框 */
+        .input-box {
+            border: 2px solid #ff9999;
+            color: #1f2937;
+            transition: all 0.3s ease;
+        }
+        .input-box:focus {
+            border-color: #008f68;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 143, 104, 0.2);
+        }
+        /* 正確時的輸入框：綠色邊框 */
+        .input-box.correct {
+            border-color: #008f68;
+            background-color: #eafcf3;
+            color: #008f68;
+        }
+        .btn-primary {
+            background-color: #008f68;
+        }
+        .btn-primary:hover {
+            background-color: #007a58;
+        }
+        .btn-secondary {
+            background-color: #3b82f6;
+        }
+        .btn-secondary:hover {
+            background-color: #2563eb;
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex items-center justify-center p-4 md:p-8 text-gray-800">
+
+    <!-- 主容器 -->
+    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-5xl flex flex-col md:flex-row overflow-hidden border border-gray-100 p-6 md:p-10 gap-8 h-full max-h-[800px]">
+        
+        <!-- 左側面板：說明與橫式題目 -->
+        <div class="w-full md:w-1/2 flex flex-col justify-center items-center text-center px-4 relative pt-20 md:pt-0">
+            
+            <!-- 計分顯示區 (移至最上方並放大字體) -->
+            <div class="absolute top-0 right-0 w-full flex justify-center md:justify-end px-4 md:px-0">
+                <div class="bg-[#eafcf3] text-[#008f68] px-5 py-3 rounded-2xl font-bold shadow-md border-2 border-[#93d8b5] flex items-center gap-3">
+                    <span class="text-xl md:text-2xl">🏆 分數:</span>
+                    <span id="score-display" class="text-2xl md:text-3xl font-black">0</span>
+                    <span id="score-title" class="ml-2 px-3 py-1 bg-[#008f68] text-white rounded-lg text-lg md:text-xl hidden transition-all duration-300"></span>
+                </div>
+            </div>
+
+            <h1 class="text-3xl md:text-4xl font-black text-[#006b4e] mb-4 flex items-center gap-3 tracking-wide">
+                ✨ 小數減法挑戰 ✨
+            </h1>
+            
+            <p class="text-gray-600 text-lg mb-8 leading-relaxed">
+                請將數字填入右方的直式中。<br>
+                記得<span class="text-[#008f68] font-bold">對齊小數點</span>！
+            </p>
+
+            <!-- 橫式顯示區 -->
+            <div class="math-font text-2xl md:text-4xl font-bold text-gray-800 mb-8 flex items-center justify-center gap-2 whitespace-nowrap">
+                <span id="q-n1">0</span>
+                <span class="text-[#008f68] mx-1">-</span>
+                <span id="q-n2">0</span>
+                <span class="text-[#008f68] mx-1">=</span>
+                <div class="relative w-12 md:w-16 flex justify-center">
+                    <span class="text-transparent border-b-4 border-[#008f68] w-full text-center">?</span>
+                    <span class="absolute bottom-1 text-black">?</span>
+                </div>
+            </div>
+
+            <!-- 提示訊息區 -->
+            <div id="feedback-msg" class="h-12 flex items-center justify-center font-bold text-lg mb-4 opacity-0 transition-opacity duration-300">
+                <span id="feedback-icon" class="mr-2"></span>
+                <span id="feedback-text"></span>
+            </div>
+
+            <!-- 按鈕區 -->
+            <button id="btn-check" onclick="checkAnswer()" class="btn-primary text-white font-bold text-2xl py-4 px-10 rounded-2xl shadow-lg transition-transform active:scale-95 tracking-widest w-full max-w-[250px]">
+                檢查答案
+            </button>
+            <button id="btn-next" onclick="generateProblem()" class="btn-secondary text-white font-bold text-2xl py-4 px-10 rounded-2xl shadow-lg transition-transform active:scale-95 tracking-widest w-full max-w-[250px] hidden">
+                下一題
+            </button>
+        </div>
+
+        <!-- 右側面板：直式計算區 -->
+        <div class="w-full md:w-1/2 dashed-box rounded-[2rem] p-6 md:p-8 flex flex-col items-center justify-center relative">
+            <h2 class="absolute top-6 flex items-center gap-2 text-xl md:text-2xl font-bold text-[#006b4e]">
+                📝 直式計算區
+            </h2>
+            
+            <!-- 直式輸入版面 -->
+            <div class="math-font mt-12 flex flex-col items-end gap-3 w-max">
+                
+                <!-- 第一行 (被減數) -->
+                <div class="flex items-end gap-2">
+                    <input type="number" inputmode="numeric" id="in-n1-int" class="input-box w-20 md:w-24 h-16 md:h-20 rounded-xl text-center text-3xl md:text-4xl font-bold" placeholder="">
+                    <span class="text-gray-800 font-black text-5xl pb-2">.</span>
+                    <input type="text" inputmode="numeric" maxlength="2" id="in-n1-dec" class="input-box w-20 md:w-24 h-16 md:h-20 rounded-xl text-center text-3xl md:text-4xl font-bold" placeholder="">
+                </div>
+                
+                <!-- 第二行 (減數) -->
+                <div class="flex items-end gap-2 relative">
+                    <span class="absolute -left-12 bottom-3 text-[#008f68] font-black text-5xl">-</span>
+                    <input type="number" inputmode="numeric" id="in-n2-int" class="input-box w-20 md:w-24 h-16 md:h-20 rounded-xl text-center text-3xl md:text-4xl font-bold" placeholder="">
+                    <span class="text-gray-800 font-black text-5xl pb-2">.</span>
+                    <input type="text" inputmode="numeric" maxlength="2" id="in-n2-dec" class="input-box w-20 md:w-24 h-16 md:h-20 rounded-xl text-center text-3xl md:text-4xl font-bold" placeholder="">
+                </div>
+                
+                <!-- 分隔線 -->
+                <div class="w-full h-2 bg-gray-400 rounded-full my-3"></div>
+                
+                <!-- 第三行 (答案) -->
+                <div class="flex items-end gap-2">
+                    <input type="number" inputmode="numeric" id="in-ans-int" class="input-box w-20 md:w-24 h-16 md:h-20 rounded-xl text-center text-3xl md:text-4xl font-bold" placeholder="">
+                    <span class="text-gray-800 font-black text-5xl pb-2">.</span>
+                    <input type="text" inputmode="numeric" maxlength="2" id="in-ans-dec" class="input-box w-20 md:w-24 h-16 md:h-20 rounded-xl text-center text-3xl md:text-4xl font-bold" placeholder="">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentN1, currentN2, currentAns;
+        let score = 0;
+        let isQuestionAnswered = false; // 避免同一題重複加分
+        
+        // 取得所有輸入框
+        const inputs = [
+            'in-n1-int', 'in-n1-dec', 
+            'in-n2-int', 'in-n2-dec', 
+            'in-ans-int', 'in-ans-dec'
+        ];
+
+        function generateNumber() {
+            // 隨機決定格式 (0: 整數, 1: 一位小數, 2: 兩位小數)
+            let format = Math.floor(Math.random() * 3);
+            let intPart = Math.floor(Math.random() * 90) + 10; // 10-99
+            let decPart = 0;
+            
+            if (format === 1) {
+                decPart = (Math.floor(Math.random() * 9) + 1) * 10; // 10, 20...90
+            } else if (format === 2) {
+                decPart = Math.floor(Math.random() * 99) + 1; // 1-99
+            }
+            return intPart + decPart / 100;
+        }
+
+        function generateProblem() {
+            let n1 = generateNumber();
+            let n2 = generateNumber();
+
+            // 確保兩個數字中，至少有一個是帶小數的 (1位或2位)
+            if (Number.isInteger(n1) && Number.isInteger(n2)) {
+                let format = Math.floor(Math.random() * 2) + 1; // 隨機決定 1 或 2 位小數
+                let decPart = format === 1 ? (Math.floor(Math.random() * 9) + 1) * 10 : Math.floor(Math.random() * 99) + 1;
+                n1 += decPart / 100; // 強制將小數加到 n1 上
+            }
+
+            // 確保被減數大於等於減數，且不完全相同
+            if (n2 > n1) {
+                [n1, n2] = [n2, n1];
+            }
+            if (n1 === n2) {
+                n1 += 1.5;
+            }
+
+            currentN1 = n1;
+            currentN2 = n2;
+            currentAns = n1 - n2;
+
+            // 顯示於橫式 (依原本位數顯示，不強制補零)
+            document.getElementById('q-n1').innerText = currentN1.toString();
+            document.getElementById('q-n2').innerText = currentN2.toString();
+
+            resetUI();
+        }
+
+        function resetUI() {
+            isQuestionAnswered = false; // 換題時重置答題狀態
+
+            // 清空並重置輸入框樣式
+            inputs.forEach(id => {
+                let el = document.getElementById(id);
+                el.value = '';
+                el.classList.remove('correct');
+            });
+
+            // 隱藏訊息，切換按鈕
+            const msgBox = document.getElementById('feedback-msg');
+            msgBox.style.opacity = '0';
+            
+            document.getElementById('btn-check').classList.remove('hidden');
+            document.getElementById('btn-next').classList.add('hidden');
+
+            // 自動 Focus 到第一個格子
+            document.getElementById('in-n1-int').focus();
+        }
+
+        function checkAnswer() {
+            // 計算預期的字串 (強制兩位小數)
+            let [expN1Int, expN1Dec] = currentN1.toFixed(2).split('.');
+            let [expN2Int, expN2Dec] = currentN2.toFixed(2).split('.');
+            let [expAnsInt, expAnsDec] = currentAns.toFixed(2).split('.');
+
+            // 取得使用者輸入
+            let vals = {};
+            inputs.forEach(id => {
+                vals[id] = document.getElementById(id).value.trim();
+            });
+
+            let isAllCorrect = true;
+
+            // 驗證整數部分 (允許 016 與 16 相等)
+            if (vals['in-n1-int'] === "" || Number(vals['in-n1-int']) !== Number(expN1Int)) isAllCorrect = false;
+            if (vals['in-n2-int'] === "" || Number(vals['in-n2-int']) !== Number(expN2Int)) isAllCorrect = false;
+            if (vals['in-ans-int'] === "" || Number(vals['in-ans-int']) !== Number(expAnsInt)) isAllCorrect = false;
+
+            // 驗證小數部分 (必須字串完全相符，強制要求補零)
+            if (vals['in-n1-dec'] !== expN1Dec) isAllCorrect = false;
+            if (vals['in-n2-dec'] !== expN2Dec) isAllCorrect = false;
+            if (vals['in-ans-dec'] !== expAnsDec) isAllCorrect = false;
+
+            const msgBox = document.getElementById('feedback-msg');
+            const icon = document.getElementById('feedback-icon');
+            const text = document.getElementById('feedback-text');
+
+            if (isAllCorrect) {
+                // 計分邏輯 (答對加 10 分)
+                if (!isQuestionAnswered) {
+                    score += 10;
+                    document.getElementById('score-display').innerText = score;
+                    updateScoreTitle();
+                    isQuestionAnswered = true;
+                }
+
+                // 顯示成功
+                msgBox.style.opacity = '1';
+                msgBox.classList.remove('text-red-500');
+                msgBox.classList.add('text-[#008f68]');
+                icon.innerText = '✅';
+                text.innerText = '太棒了！計算完全正確！';
+
+                // 將輸入框標示為綠色
+                inputs.forEach(id => {
+                    document.getElementById(id).classList.add('correct');
+                });
+
+                // 切換按鈕
+                document.getElementById('btn-check').classList.add('hidden');
+                document.getElementById('btn-next').classList.remove('hidden');
+            } else {
+                // 顯示錯誤
+                msgBox.style.opacity = '1';
+                msgBox.classList.remove('text-[#008f68]');
+                msgBox.classList.add('text-red-500');
+                icon.innerText = '❌';
+                text.innerText = '填寫錯誤喔！請檢查數字是否填對，並確認對齊小數點。';
+            }
+        }
+
+        // 限制小數框只能輸入數字 (處理 type="text" 的防呆)
+        ['in-n1-dec', 'in-n2-dec', 'in-ans-dec'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function (e) {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            });
+        });
+
+        // 更新稱號邏輯
+        function updateScoreTitle() {
+            const titleEl = document.getElementById('score-title');
+            if (score === 0) {
+                titleEl.innerText = "";
+                titleEl.classList.add('hidden');
+            } else {
+                titleEl.classList.remove('hidden');
+                if (score <= 100) {
+                    titleEl.innerText = "數學新手";
+                    titleEl.className = "ml-2 px-3 py-1 bg-blue-500 text-white rounded-lg text-lg md:text-xl shadow-sm transition-all duration-300";
+                } else if (score <= 150) {
+                    titleEl.innerText = "數學高手";
+                    titleEl.className = "ml-2 px-3 py-1 bg-orange-500 text-white rounded-lg text-lg md:text-xl shadow-sm transition-all duration-300";
+                } else {
+                    titleEl.innerText = "數學大師";
+                    titleEl.className = "ml-2 px-3 py-1 bg-red-600 text-white rounded-lg text-lg md:text-xl shadow-sm transition-all duration-300";
+                }
+            }
+        }
+
+        // 初始化
+        window.onload = () => {
+            generateProblem();
+            updateScoreTitle();
+        };
+    </script>
+</body>
+</html>
