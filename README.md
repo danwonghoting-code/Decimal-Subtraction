@@ -1,2 +1,2 @@
-# Decimal-Subtraction
+# 小數減法
 小數減法
